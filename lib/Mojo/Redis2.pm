@@ -241,19 +241,19 @@ methods on C<$self>:
 append, echo, decr, decrby,
 del, exists, expire, expireat, get, getbit,
 getrange, getset, hdel, hexists, hget, hgetall,
-hincrby, hkeys, hlen, hmget, hmset, hset,
+hincrby, hkeys, hlen, hmget, hmset, hscan, hset,
 hsetnx, hvals, incr, incrby, keys, lindex,
 linsert, llen, lpop, lpush, lpushx, lrange,
 lrem, lset, ltrim, mget, move, mset,
 msetnx, persist, ping, publish, randomkey, rename,
 renamenx, rpop, rpoplpush, rpush, rpushx, sadd,
-scard, sdiff, sdiffstore, set, setbit, setex,
+scan, scard, sdiff, sdiffstore, set, setbit, setex,
 setnx, setrange, sinter, sinterstore, sismember, smembers,
-smove, sort, spop, srandmember, srem, strlen,
+smove, sort, spop, srandmember, srem, sscan, strlen,
 sunion, sunionstore, ttl, type, zadd, zcard,
 zcount, zincrby, zinterstore, zrange, zrangebyscore, zrank,
 zrem, zremrangebyrank, zremrangebyscore, zrevrange, zrevrangebyscore, zrevrank,
-zscore and zunionstore.
+zscan, zscore and zunionstore.
 
 See L<http://redis.io/commands> for details.
 
@@ -423,15 +423,15 @@ sub unsubscribe {
 sub DESTROY { $_[0]->{destroy} = 1; $_[0]->_cleanup; }
 
 sub _basic_operations {
-  'append', 'echo', 'decr', 'decrby', 'del', 'exists', 'expire', 'expireat', 'get', 'getbit', 'getrange', 'getset',
-    'hdel', 'hexists', 'hget', 'hgetall', 'hincrby', 'hkeys', 'hlen', 'hmget', 'hmset',  'hset',   'hsetnx', 'hvals',
-    'incr', 'incrby',  'keys', 'lindex',  'linsert', 'llen',  'lpop', 'lpush', 'lpushx', 'lrange', 'lrem',   'lset',
-    'ltrim', 'mget', 'move', 'mset', 'msetnx', 'persist', 'ping', 'publish', 'randomkey', 'rename', 'renamenx', 'rpop',
-    'rpoplpush', 'rpush', 'rpushx', 'sadd', 'scard', 'sdiff', 'sdiffstore', 'set', 'setbit', 'setex', 'setnx',
-    'setrange', 'sinter', 'sinterstore', 'sismember', 'smembers', 'smove', 'sort', 'spop', 'srandmember', 'srem',
-    'strlen', 'sunion', 'sunionstore', 'ttl', 'type', 'zadd', 'zcard', 'zcount', 'zincrby', 'zinterstore', 'zrange',
-    'zrangebyscore', 'zrank', 'zrem', 'zremrangebyrank', 'zremrangebyscore', 'zrevrange', 'zrevrangebyscore',
-    'zrevrank', 'zscore', 'zunionstore',;
+  qw(append echo decr decrby del exists expire expireat get getbit getrange getset
+  hdel hexists hget hgetall hincrby hkeys hlen hmget hmset hscan hset hsetnx hvals
+  incr incrby keys lindex linsert llen lpop lpush lpushx lrange lrem lset
+  ltrim mget move mset msetnx persist ping publish randomkey rename renamenx rpop
+  rpoplpush rpush rpushx sadd scan scard sdiff sdiffstore set setbit setex setnx
+  setrange sinter sinterstore sismember smembers smove sort spop srandmember srem
+  sscan strlen sunion sunionstore ttl type zadd zcard zcount zincrby zinterstore zrange
+  zrangebyscore zrank zrem zremrangebyrank zremrangebyscore zrevrange zrevrangebyscore
+  zrevrank zscan zscore zunionstore);
 }
 
 sub _blocking_group {'blocking'}
