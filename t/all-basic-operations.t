@@ -54,7 +54,7 @@ sub Hashes {
   is $redis->hexists($key, "foo"), 1, 'hexists';
   is $redis->hdel($key, "foo"), 1, 'hdel';
   is_deeply [sort @{ $redis->hvals($key) }], [qw( aaa fourty_two yikes )], 'hvals';
-  is_deeply $redis->hscan($key, 0, 'match', 'baz'), [0, [qw( baz yikes )]], 'hscan';
+  is_deeply pop @{ $redis->hscan($key, 0, 'match', 'baz') }, [qw( baz yikes )], 'hscan';
   is $redis->hexists($key, "foo"), 0, 'hexists';
 }
 
@@ -69,7 +69,7 @@ sub Keys {
   is_deeply $redis->keys('does:not:exist*'), [], 'keys';
   is_deeply $redis->keys($key), [qw( redis2:test:Keys )], 'keys';
   is_deeply $redis->keys("$key*"), [qw( redis2:test:Keys )], 'keys';
-  is_deeply $redis->scan(0, 'match', "$key*"), [0, [qw( redis2:test:Keys )]], 'scan';
+  is_deeply pop @{ $redis->scan(0, 'match', "$key*") }, [qw( redis2:test:Keys )], 'scan';
   is $redis->rename($key => "$key:b"), 'OK', 'rename';
   is $redis->exists($key), 0, 'exists';
   is $redis->exists("$key:b"), 1, 'exists';
@@ -117,7 +117,7 @@ sub Sets {
   is_deeply $redis->sinter($key, "$key:b"), ['b'], 'sinter';
   is $redis->sismember($key => 'b'), '1', 'sismember';
   is_deeply [sort @{ $redis->smembers($key) }], [qw( a b )], 'smembers';
-  is_deeply $redis->sscan($key, 0, 'match', 'a'), [0, [qw( a )]], 'sscan';
+  is_deeply pop @{ $redis->sscan($key, 0, 'match', 'a') }, [qw( a )], 'sscan';
   is $redis->smove($key => "$key:b" => 'a'), 1, 'smove';
   is $redis->srandmember($key), 'b', 'srandmember';
   is $redis->spop($key), 'b', 'spop';
@@ -155,7 +155,7 @@ sub SortedSets {
   is_deeply $redis->zrangebyscore("$key:x" => 4, 5), [qw( four )], 'zrangebyscore';
   is_deeply $redis->zrevrangebyscore("$key:x" => 4, 0), [qw( four three x )], 'zrevrangebyscore';
 
-  is_deeply $redis->zscan($key, 0, 'match', 'two'), [0, [qw( two 5 )]], 'zscan';
+  is_deeply pop @{ $redis->zscan($key, 0, 'match', 'two') }, [qw( two 5 )], 'zscan';
 
   is $redis->zrem($key => 'two'), 1, 'zrem';
   is $redis->zremrangebyscore($key => 3, 3), 1, 'zremrangebyscore';
