@@ -69,7 +69,14 @@ sub Keys {
   is_deeply $redis->keys('does:not:exist*'), [], 'keys';
   is_deeply $redis->keys($key), [qw( redis2:test:Keys )], 'keys';
   is_deeply $redis->keys("$key*"), [qw( redis2:test:Keys )], 'keys';
-  is_deeply pop @{ $redis->scan(0, 'match', "$key*") }, [qw( redis2:test:Keys )], 'scan';
+  my $res;
+  while (1) {
+	  $res = $redis->scan($res->[0] || 0, 'match', $key, 'count', 100);
+	  if ($res->[0] == 0) {
+		is_deeply $res, [0, [qw( redis2:test:Keys )]], 'scan';
+		last;
+	  }
+  }
   is $redis->rename($key => "$key:b"), 'OK', 'rename';
   is $redis->exists($key), 0, 'exists';
   is $redis->exists("$key:b"), 1, 'exists';
