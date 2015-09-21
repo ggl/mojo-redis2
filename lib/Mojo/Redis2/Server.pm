@@ -31,7 +31,6 @@ use feature 'state';
 use Mojo::Asset::File;
 use Mojo::Base -base;
 use Mojo::IOLoop;
-use IO::Socket::INET;
 use Time::HiRes ();
 use constant SERVER_DEBUG => $ENV{MOJO_REDIS_SERVER_DEBUG} || 0;
 
@@ -100,7 +99,7 @@ sub start {
 
   return $self if $self->pid and kill 0, $self->pid;
 
-  $config{bind}                        ||= 'localhost';
+  $config{bind}                        ||= '127.0.0.1';
   $config{daemonize}                   ||= 'no';
   $config{databases}                   ||= 16;
   $config{loglevel}                    ||= SERVER_DEBUG ? 'verbose' : 'warning';
@@ -109,7 +108,6 @@ sub start {
   $config{requirepass}                 ||= '';
   $config{stop_writes_on_bgsave_error} ||= 'no';
   $config{syslog_enabled}              ||= 'no';
-  $config{tcp_keepalive}               ||= 0;
 
   $cfg = Mojo::Asset::File->new;
   $self->{bin} = $ENV{REDIS_SERVER_BIN} || 'redis-server';
@@ -120,10 +118,12 @@ sub start {
     $cfg->add_chunk("$key $value\n") if length $value;
   }
 
+  require Mojo::Redis2;
+
   if ($self->{pid} = fork) {    # parent
     $self->{config} = \%config;
-    $self->_wait_for_server_to_start;
     $self->{url} = sprintf 'redis://x:%s@%s:%s/', map { $_ // '' } @config{qw( requirepass bind port )};
+    $self->_wait_for_server_to_start;
     $ENV{MOJO_REDIS_URL} //= $self->{url} if $self->configure_environment;
     return $self;
   }
@@ -162,20 +162,21 @@ sub _instance { ref $_[0] ? $_[0] : $_[0]->singleton; }
 sub _wait_for_server_to_start {
   my $self  = shift;
   my $guard = 100;
+  my $e;
 
   while (--$guard) {
+    local $@;
     Time::HiRes::usleep(10e3);
-    return
-      if IO::Socket::INET->new(
-      PeerAddr => $self->config->{bind},
-      PeerPort => $self->config->{port},
-      Proto    => 'tcp',
-      Timeout  => 1
-      );
+    return if eval { Mojo::Redis2->new(url => $self->url)->ping };
+    $e = $@ || 'No idea why we cannot connect to Mojo::Redis2::Server';
   }
 
-  die "Failed to start $self->{bin}. ($?)" if $self->pid and waitpid $self->pid, 0;
-  die 'Redis server has unknown status';
+  if ($self->pid and waitpid $self->pid, 0) {
+    my ($x, $s, $d) = ($? >> 8, $? & 127, $? & 128);
+    die "Failed to start $self->{bin}: exit=$x, signal=$s, dump=$d";
+  }
+
+  die $e;
 }
 
 sub DESTROY { shift->stop; }
